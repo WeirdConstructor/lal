@@ -1,0 +1,185 @@
+LAL Primitive and Syntax Reference Manual
+=========================================
+
+__LAL - Lua Lisp/Scheme Compiler__
+
+For a syntax reference I recommend looking at the Scheme specification
+document R7RS (small). LAL tries to be compatible to Scheme when it
+is reasonably possible.
+But bear in mind, that LAL can not provide the complete spectrum
+of Scheme syntax and semantics. It is a Language that is compiled
+to Lua and is not wrapped into an interpretation layer.
+This basically means, you lose features such as `call-with-current-continuation`,
+`dynamic-wind`.
+
+Also with regard to procedures and libraries a look at the R7RS (small) reference
+may prove valuable. In any case, this reference ought to be a comprehensive
+handbook for developing LAL programs, and thus at least contains a declaration
+of the procedure or syntax.
+
+The goal of LAL is to provide the same performance trade offs that
+Lua comes with. LAL tries hard to add as little runtime overhead as
+possible and output reasonably efficient (and __human readable__) Lua code.
+
+This manual is automatically generated from the compiler
+and LAL library sources. I'm not that fond of automatically
+generated documentation, but it should serve the purpose of
+a reference manual due to example code coupling the descriptions.
+
+Important Notes about the Lua Implementation
+--------------------------------------------
+
+There are a few notes to make about the way LAL is compiled to Lua.
+All LAL lists are directly converted and represented as Lua tables.
+This means, you basically work with Lua tables. While this has obvious
+performance benefits compared to using tables only as `cons` pairs to
+form a linked list. It also comes with all the warts that Lua tables
+have. First and probably the biggest one is, that you can not put a `nil`
+into the list. It will just make the list end at that index.
+This is probably the ugliest wart. The LAL parser internally replaces
+`nil` with some sentinel value, but once it left the compiler and is
+transformed into Lua code, you will have the Lua `nil` in your hands.
+
+Next, tables also act as associative maps, which sometimes leads to confusing
+results. LAL tries to hide that fact, but you will probably still stumble upon
+this fact down the road.
+
+Symbols are represented as Lua strings. This is done because Lua internalizes all
+strings, so that a string comparsion is essentially an integer comparsion.
+LAL represents Symbols as Lua strings that start with the character `"\xFE;"`
+character number `254`. And keywords start with `"\xFD;"` (`253`).
+Bear this in mind, if you get surprising results from
+procedures like `(write ...)`. It also means, that if you write
+`(display "\xFE;foobar")` you will get a compiletime error, because LAL can't
+find the symbol `foobar` (in case you didn't `define` it).
+
+It is a bit painful and ugly, but bear in mind that LAL comes with clear benefits
+on the performance side compared to a full blown interpreter implemented in Lua.
+Such an interpreter would need to represent Scheme `cons` pairs and lists as linked
+lists of thos pairs. That poses a big burden on the Lua garbage collector, and
+handling those lists would be quite slow too. On top of that, interaction with
+Lua code becomes difficult, as you would need to transform the linked
+list into a Lua table first. And then you still have to worry about the `nil` holes.
+
+License
+-------
+
+This source code is published under the MIT License. See lal.lua or LICENSE
+file for the complete copyright notice.
+
+LAL Values and Data Types
+-------------------------
+
+LAL is inspired by Clojures sequences and maps a bit when it comes to
+syntactic aspects of the language. On the other side, with regard of available
+primitives, special forms and procedures it is heavily oriented on Scheme R7RS.
+
+These are the data types that LAL provides:
+
+### Symbols
+
+LAL knows two kinds of symbols.
+First there are the regular ones, which are mostly Scheme compatible
+with regard to the reader syntax:
+
+    a-symbol
+    another_symbol
+    make-me!
+    lol?!
+
+But there is a special case: Lua also has __Keywords__, which
+are basically symbols that are postfixed with a colon `:`:
+
+    a-keyword:
+    alsoone:
+    also-a-keyword::
+
+These always evaluate to themself. This makes it easy to use them
+as keys in maps (see below).
+
+### Integers (exact numbers)
+
+LAL parses integer number like these:
+
+    -1
+    +1233
+    392
+    49
+
+Thes are internall converted to a Lua integer using `math.tointeger`
+which Lua 5.3 provides.
+
+### Floating Point (inexact number)
+
+LAL parses float numbers like these:
+
+    -1.32
+    0.334
+    +493.232
+
+These are internally converted to Lua numbers using `tonumber`.
+
+### Strings
+
+The string reader syntax is largely compatible with Scheme R7RS small:
+
+    "foobar hexval: \x0a;\x0d;"
+    "newlines and \"quotes\" like usual: \n and tabs: \t, and so on..."
+
+However, there is an extension that allows multiline strings
+in similar fashion that Chicken Scheme provides:
+
+    (let ((x #<<BLAFOO
+        This is a
+        multiline
+        String! 
+    BLAFOO))
+        x)
+    ;=>"    This is a\n    multiline\n    String!"
+
+There is also an interpolated version available, that is
+transformed into a `(str ...)` expression:
+
+    (define x 123)
+    #<#FOOBAR
+        This is just a string with a ##hashtag
+        You can put calculated things in like 2 + 4 = #(+ 2 4)
+        And also raw identifiers can be bound: ,,#{x},,
+    FOOBAR
+
+`#{...}` exists to directly insert identifiers, which would
+also be possible using `#`, but it would eat up any other characters
+allowed in an identifier. To insert an `#` you have to double it like `##`.
+
+If you want to write strings with lots of backslashes in it, like
+for a regular expression, you can use the special single quote
+syntax:
+
+    #q'\s+foobar\s+'    ;=> "\\s+foobar\\s+"
+
+If you want to embed the single quote use a double single quote:
+
+    #q''''    ;=> "'"
+
+### Lists
+
+Lists can be written in multiple forms:
+
+    (list 1 2 3)
+    '(1 2 3)
+    [1 2 3]         ; Clojure inspired syntax
+                    ; syntactic sugar for: (list 1 2 3)
+
+### Associative Maps
+
+These are inspired a bit by Clojure and are internally represented
+using Lua tables:
+
+    { a: 10 b: 20 }
+    { 'a 10 'b 20 }
+    ; both maps will have the 'a' and 'b' keys set.
+
+Symbols in a map definition are converted and stripped off their prefixes
+and put as strings into the Lua table. This is makes interaction with Lua
+code easier. Note that also the colon `:` of the keywords are stripped
+off.

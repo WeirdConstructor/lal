@@ -1,0 +1,152 @@
+; See Copyright Notice in lal.lua
+;
+; Document generator. Only works in combination with LALRT
+; to provide (rt sys) and (rt util).
+
+(import (rt sys))
+(import (rt util))
+(import (lua basic))
+(import (lua string))
+(import (lua io))
+(import (lua os))
+(import (lua table))
+(import (list util))
+(import (sys util))
+
+(import (lal syntax compiler))
+
+;(lal-syntax-compiler-debug-print-output)
+
+(define SECTION-IMPORTS {})
+
+(define (match str regex)
+    (let ((match (lua-table-pack (lua-string-match str regex))))
+        (if (zero? (length match))
+            nil
+            match)))
+
+(define (make-header)
+    (sys-util-read-file (str (lua-os-getenv "LALRT_LIB") "/lua/lal/doc/lal_intro.mkd")))
+
+(define (sectionalize records)
+  (let ((section-mapping {}))
+    (do-each (v records)
+      (let ((section (@0 (@0 v))))
+        (when (nil? ($section section-mapping))
+          ($!section section-mapping []))
+        (push! ($section section-mapping) v)))
+    section-mapping))
+
+(define (do-each-sorted-keys mapping fn)
+    (let ((keys [])) (do-each (k v mapping) (push! keys k))
+        (lua-table-sort keys)
+        (do-each (k keys)
+            (fn k ($k mapping)))))
+
+(define (sort-section section)
+    (lua-table-sort section
+        (lambda (a b)
+            #;(display (str "SORT" (write-str b) "\n"))
+            (< (@3 (@0 a))
+               (@3 (@0 b)))))
+    section)
+
+(define (format-item-header item-header)
+    (lua-string-format
+     "\n### %s - __%s__\n"
+     (lua-string-gsub (@2 item-header) "`" "``")
+     (@1 item-header)))
+
+(define (write-sections sections)
+    (let ((out-buf      [])
+          (<-           (lambda s (do-each (line s) (push! out-buf line)))))
+        (do-each-sorted-keys sections (lambda (k v)
+            (<- k)
+            (<- (lua-string-rep "-" (lua-string-len k)))
+            (when (not (nil? ($k SECTION-IMPORTS)))
+              (<- (str "\n" "(import (" ($k SECTION-IMPORTS) "))")))
+            (do-each (v (sort-section v))
+                (<- (format-item-header (@0 v)))
+                (let ((lines (list-util-skip-until
+                              (lambda (l)
+                                (lua-string-match l "%S"))
+                              (list-util-drop 1 v))))
+                  (do-each (line lines) (<- line)))
+                (<- ""))))
+        (lua-table-concat out-buf "\n")))
+
+(define (extract-section-imports record-head)
+  (let ((m (match (@0 record-head) "^([^:]*):(.*)$")))
+    (when m
+      ($!(@0 m) SECTION-IMPORTS
+       (util-re
+		[[(@1 m) "$1 $2"]]
+		"^([^-]*)(?:-(.*))?$"))
+      (@!0 record-head (@0 m)))))
+
+(define (search-for-lal-doc lines records)
+  (let ((in-doc-string #f)
+        (doc-string []))
+    (do-each (line lines)
+      (if in-doc-string
+        (if (or (match line "^%-?%-?%]%]")
+                (match line "^%|#"))
+            (begin
+              (set! in-doc-string #f)
+              #;(lua-print "SET" (@3 (@0 doc-string)) (write doc-string))
+              (push! records doc-string)
+              #;(lua-print "LIB" (write records))
+              (set! doc-string []))
+            (push! doc-string line))
+          (let ((m (match line "^%-%-%[%[%s*@(%S+)%s+(%S+)%s+(%((%S+).*)")))
+            (when (nil? m)
+              (set! m (match line "^#%|%s*@(%S+)%s+(%S+)%s+(%((%S+).*)")))
+            (when (not (nil? m))
+              (extract-section-imports m)
+              (push! doc-string m)
+              (set! in-doc-string #t)))))))
+
+(define (split-lines str)
+  (util-re str ["\r?\n" "s"]))
+
+(define (extract-doc-strings-from-env records)
+  (do-each (k v lua-ENV)
+    (if (lua-string-match k "_doc$")
+      (do-each (func doc-string v)
+        (displayln (str found:: func))
+        (let ((lines (split-lines doc-string))
+              (first (@0 lines))
+              (rest (list-util-drop 1 lines))
+              (m (match first "^%s*@(%S+)%s+(%S+)%s+(%((%S+).*)")))
+          (extract-section-imports m)
+          (unless m
+            (error (str "Bad doc in env: " func)))
+          #;(displayln (write-str (cons m rest)))
+          (push! records (cons m rest)))))))
+
+(let ((files (sys-find "." "iRf" ".*\.lua"))
+      (records [])
+      (lalrt-records []))
+
+  (concat! files (sys-find "." "iRf" ".*\.lal"))
+
+  (do-each (file files)
+    (displayln (str process:: file))
+    (let ((lines (split-lines (sys-util-read-file file))))
+      (search-for-lal-doc lines records)))
+
+  (extract-doc-strings-from-env lalrt-records)
+
+  (let ((text       (write-sections (sectionalize records)))
+        (lalrt-text (write-sections (sectionalize lalrt-records)))
+        (complete-text (str
+						(make-header) text
+						"LALRT Specific Packages\n"
+						"=======================\n\n"
+						lalrt-text)))
+    (sys-util-write-file
+     (str (lua-os-getenv "LALRT_LIB")
+          "/lua/lal/doc/lal_reference.mkd")
+     complete-text)
+    (sys-util-write-file "lal_reference.mkd" complete-text)
+    (displayln "wrote lal_reference.mkd")))

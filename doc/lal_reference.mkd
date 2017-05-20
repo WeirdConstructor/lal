@@ -1,0 +1,1740 @@
+LAL Primitive and Syntax Reference Manual
+=========================================
+
+__LAL - Lua Lisp/Scheme Compiler__
+
+For a syntax reference I recommend looking at the Scheme specification
+document R7RS (small). LAL tries to be compatible to Scheme when it
+is reasonably possible.
+But bear in mind, that LAL can not provide the complete spectrum
+of Scheme syntax and semantics. It is a Language that is compiled
+to Lua and is not wrapped into an interpretation layer.
+This basically means, you lose features such as `call-with-current-continuation`,
+`dynamic-wind`.
+
+Also with regard to procedures and libraries a look at the R7RS (small) reference
+may prove valuable. In any case, this reference ought to be a comprehensive
+handbook for developing LAL programs, and thus at least contains a declaration
+of the procedure or syntax.
+
+The goal of LAL is to provide the same performance trade offs that
+Lua comes with. LAL tries hard to add as little runtime overhead as
+possible and output reasonably efficient (and __human readable__) Lua code.
+
+This manual is automatically generated from the compiler
+and LAL library sources. I'm not that fond of automatically
+generated documentation, but it should serve the purpose of
+a reference manual due to example code coupling the descriptions.
+
+Important Notes about the Lua Implementation
+--------------------------------------------
+
+There are a few notes to make about the way LAL is compiled to Lua.
+All LAL lists are directly converted and represented as Lua tables.
+This means, you basically work with Lua tables. While this has obvious
+performance benefits compared to using tables only as `cons` pairs to
+form a linked list. It also comes with all the warts that Lua tables
+have. First and probably the biggest one is, that you can not put a `nil`
+into the list. It will just make the list end at that index.
+This is probably the ugliest wart. The LAL parser internally replaces
+`nil` with some sentinel value, but once it left the compiler and is
+transformed into Lua code, you will have the Lua `nil` in your hands.
+
+Next, tables also act as associative maps, which sometimes leads to confusing
+results. LAL tries to hide that fact, but you will probably still stumble upon
+this fact down the road.
+
+Symbols are represented as Lua strings. This is done because Lua internalizes all
+strings, so that a string comparsion is essentially an integer comparsion.
+LAL represents Symbols as Lua strings that start with the character `"\xFE;"`
+character number `254`. And keywords start with `"\xFD;"` (`253`).
+Bear this in mind, if you get surprising results from
+procedures like `(write ...)`. It also means, that if you write
+`(display "\xFE;foobar")` you will get a compiletime error, because LAL can't
+find the symbol `foobar` (in case you didn't `define` it).
+
+It is a bit painful and ugly, but bear in mind that LAL comes with clear benefits
+on the performance side compared to a full blown interpreter implemented in Lua.
+Such an interpreter would need to represent Scheme `cons` pairs and lists as linked
+lists of thos pairs. That poses a big burden on the Lua garbage collector, and
+handling those lists would be quite slow too. On top of that, interaction with
+Lua code becomes difficult, as you would need to transform the linked
+list into a Lua table first. And then you still have to worry about the `nil` holes.
+
+License
+-------
+
+This source code is published under the MIT License. See lal.lua or LICENSE
+file for the complete copyright notice.
+
+LAL Values and Data Types
+-------------------------
+
+LAL is inspired by Clojures sequences and maps a bit when it comes to
+syntactic aspects of the language. On the other side, with regard of available
+primitives, special forms and procedures it is heavily oriented on Scheme R7RS.
+
+These are the data types that LAL provides:
+
+### Symbols
+
+LAL knows two kinds of symbols.
+First there are the regular ones, which are mostly Scheme compatible
+with regard to the reader syntax:
+
+    a-symbol
+    another_symbol
+    make-me!
+    lol?!
+
+But there is a special case: Lua also has __Keywords__, which
+are basically symbols that are postfixed with a colon `:`:
+
+    a-keyword:
+    alsoone:
+    also-a-keyword::
+
+These always evaluate to themself. This makes it easy to use them
+as keys in maps (see below).
+
+### Integers (exact numbers)
+
+LAL parses integer number like these:
+
+    -1
+    +1233
+    392
+    49
+
+Thes are internall converted to a Lua integer using `math.tointeger`
+which Lua 5.3 provides.
+
+### Floating Point (inexact number)
+
+LAL parses float numbers like these:
+
+    -1.32
+    0.334
+    +493.232
+
+These are internally converted to Lua numbers using `tonumber`.
+
+### Strings
+
+The string reader syntax is largely compatible with Scheme R7RS small:
+
+    "foobar hexval: \x0a;\x0d;"
+    "newlines and \"quotes\" like usual: \n and tabs: \t, and so on..."
+
+However, there is an extension that allows multiline strings
+in similar fashion that Chicken Scheme provides:
+
+    (let ((x #<<BLAFOO
+        This is a
+        multiline
+        String! 
+    BLAFOO))
+        x)
+    ;=>"    This is a\n    multiline\n    String!"
+
+There is also an interpolated version available, that is
+transformed into a `(str ...)` expression:
+
+    (define x 123)
+    #<#FOOBAR
+        This is just a string with a ##hashtag
+        You can put calculated things in like 2 + 4 = #(+ 2 4)
+        And also raw identifiers can be bound: ,,#{x},,
+    FOOBAR
+
+`#{...}` exists to directly insert identifiers, which would
+also be possible using `#`, but it would eat up any other characters
+allowed in an identifier. To insert an `#` you have to double it like `##`.
+
+### Lists
+
+Lists can be written in multiple forms:
+
+    (list 1 2 3)
+    '(1 2 3)
+    [1 2 3]         ; Clojure inspired syntax
+                    ; syntactic sugar for: (list 1 2 3)
+
+### Associative Maps
+
+These are inspired a bit by Clojure and are internally represented
+using Lua tables:
+
+    { a: 10 b: 20 }
+    { 'a 10 'b 20 }
+    ; both maps will have the 'a' and 'b' keys set.
+
+Symbols in a map definition are converted and stripped off their prefixes
+and put as strings into the Lua table. This is makes interaction with Lua
+code easier. Note that also the colon `:` of the keywords are stripped
+off.
+arithmetic
+----------
+
+### (+ _num-arg_+) - __procedure__
+
+This procedure returns the sum of all _num-arg_ arguments.
+
+    (let ((x 10)) (+ x 20)) ;=> 30
+
+
+### (- _num-expr_+) - __procedure__
+
+This procedure returns the subtration of the second argument
+(and following) from the first argument.
+
+    (- 30 20 5) ;=> 5
+    (- 10 20)   ;=> -10
+
+
+### (abs _num_) - __procedure__
+
+Returns the absolute value of _num_.
+
+
+### (max _num_+) - __procedure__
+
+Returns the maximum value of all _num_ arguments.
+
+
+### (min _num_+) - __procedure__
+
+Returns the minimum value of all _num_ arguments.
+
+compiler
+--------
+
+### (macroexpand _form_) - __syntax__
+
+This function expands the macros found in _form_ and returns the
+expanded form as quoted LAL value.
+
+    (define-macro (head-of-syntax-list foo)
+      (@0 foo))
+
+    (lua-print
+     (write-str
+      (macroexpand
+       (head-of-syntax-list
+        ((let (x a) x) 2 3)))))
+    ;stdout=>(let (x a) x)
+
+
+control
+-------
+
+### (apply _proc_ [_arg1_ ... _argN_] [...]) - __procedure__
+
+Calls _proc_ with the elements of the appended lists as argument.
+
+    (apply str-join "," ["X" "Y"]) ;=> "X,Y"
+
+controlflow
+-----------
+
+### (block _label-symbol_ _sequence_) - __syntax__
+
+This syntax allows to break out of loops in conjunction with `(return-from ...)`.
+It internally binds the _label-symbol_ for `return-from` to refer to.
+When `return-from` is called the execution continues after the `block` expression
+with the return value given to `return-from`.
+
+    (block outer
+        (for (i 1 10)
+            (when (= i 5)
+                (return-from outer 99)))
+        20)
+    ;=> 99
+
+Please note, that the internal binding of _label-symbol_ is dynamic and not
+lexically scoped. This means, you can not use it in a lambda closure to jump
+up/down the call stack. LAL does not support continuations. (You can however
+use the coroutine capabilities provided by Lua).
+
+
+
+### (case _key-value_ ((_datum_ ...) _result_) ...) - __syntax__
+
+Alternative forms:
+
+* (case ((_datum_ ...) _result_) ... (else _result_))
+* (case ((_datum_ ...) _result_) ... (else => _result_))
+
+This is a dispatch based on the `eqv?` operator. _key-value_ is evaluated
+and the result is compared against each _datum_ of the `case` clauses.
+The matching clause _result_ is evaluated then and it's value returned.
+Alternatively there is the `else` branch, which is executed when nothing
+matches.
+If a `=>` is present in the _result_ of a `case` branch or `else`,
+then the _result_ should evaluated to a function, which is then called
+with the _key-value_ as argument.
+
+
+### (cond (_condition-expr_ _result_) ...) - __syntax__
+
+* (cond (_condition-expr_ _result_) ... (else _result_))
+
+Simple multi-if statement that tests multiple _condition-expr_ and then
+evaluated the corresponding _result_.
+If there is an `else` branch, the branch will be evaluated when no condition
+evaluates to `#t`.
+
+    (cond ((> 3 2) 'greater)
+          ((< 3 2) 'less))
+    ;=> greater
+
+    (cond ((> 3 3) 'greater)
+          ((< 3 3) 'less)
+          (else 'equal))
+    ;=> equal
+
+
+### (if _condition-expr_ [_true-branch_ [_false-branch_] ]) - __syntax__
+
+The most basic control flow operation. If _condition-expr_ evaluates to a
+true value the _true-branch_ is evaluated. Otherwise the _false-branch_ is
+evaluated if it is present.
+
+    (if #t 10 20) ;=> 10
+    (if #f 10 20) ;=> 20
+    (if #t 10)    ;=> 10
+    (if #f 10)    ;=> nil
+    (if #t)       ;=> nil
+    (if #f)       ;=> nil
+
+    (let ((x 100))
+      (if (> x 50)
+        (set! x 11))
+      x)
+    ;=> 11
+
+
+### (return-from _label-symbol_ _expression_) - __syntax__
+
+This syntax is to be used in conjunction with `(block ...)`.
+It returns the value of _expression_ from the corresponding `block`.
+
+    (block break
+        (for (i 1 10000)
+            (when (is-done? i)
+                (return-from break i))))
+
+
+### (when _condition-expr_ _block_) - __syntax__
+
+When _condition-expr_ evaluates to a false value, the _block_ is executed.
+
+    (let ((something 1))
+      (unless (zero? something)
+        (display "Something is zero!")
+        (set! something 0))
+      something)
+    ;=>0
+
+
+### (when _condition-expr_ _block_) - __syntax__
+
+When _condition-expr_ evaluates to a non false (true) value,
+the _block_ is executed.
+
+    (let ((something 0))
+      (when (zero? something)
+        (display "Something is zero!")
+        (set! something 1))
+      something)
+    ;=>1
+
+environment
+-----------
+
+### (import _import-spec_+) - __syntax__
+
+Where _import-spec_ may be one of:
+
+* _library-name_    - A list of identifiers and numbers
+
+	(import	(lua basic))
+	(import	(lua math))
+
+	(lua-print (lua-math-floor 3.2))
+	;stdout=> 3
+
+Following (builtin) libraries are available:
+
+* `(lua string)`
+* `(lua math)`
+* `(lua table)`
+* `(lua package)`
+* `(lua debug)`
+* `(lua io)`
+* `(lua utf8)`
+* `(lua basic)`
+
+See the Lua documentation for the contents of the
+corresponding packages. The __(lua basic)__ package
+is a special case. The contents of it is not
+prefixed with `lua-basic` but directly with `lua-`.
+
+When LAL is run within LALRT, it provides the
+LALRT specific packages under the `rt` libraries:
+
+* `(rt log)`
+* `(rt utl)`
+* `(rt gfx)`
+* `(rt sys)`
+* `(rt mp)`
+* ...
+
+Imported symbols from any of those libraries are prefixed with
+their respective package name, like `mp-wait`.
+
+Please note, that these packages (`rt`) are only meaningful inside LALRT,
+other runtime environments probably provide other globally
+accessible packages.
+
+exceptions
+----------
+
+### (error _msg_ _value_*) - __procedure__
+
+This procedure works like `(raise ...)`, but it packs _msg_ and
+any _value_ values into an error object which is then thrown.
+You can detect error objects using `(error-object? ...)`
+and catch then using `(with-exception-handler ...)` or `(guard ...)`.
+
+    (with-exception-handler
+        (lambda (err)
+            (if (error-object? err)
+                (display (error-object-message err))
+                (display err)))
+        (lambda ()
+            (error "Something is wrong!" 193)))
+    ;stdout=> Something is wrong!
+
+
+### (error-object-irritants _value_) - __procedure__
+
+If _value_ is an error object that was thrown using `(error ...)`
+this procedure returns the irritants or values that were passed.
+
+    (with-exception-handler
+        (lambda (err)
+            (if (error-object? err)
+                (error-object-irritants err)
+                err))
+        (lambda ()
+            (error "Something is wrong!" 193)))
+    ;=>(193)
+
+
+### (error-object-message _value_) - __procedure__
+
+If _value_ is an error object that was thrown using `(error ...)`
+this procedure returns the message.
+
+
+### (error-object? _value_) - __procedure__
+
+Returns true if _value_ was created using `(error ...)`.
+
+    (with-exception-handler
+        (lambda (err)
+            (if (error-object? err)
+                (display (error-object-message err))
+                (display err)))
+        (lambda ()
+            (error "Something is wrong!" 193)))
+    ;stdout=> Something is wrong!
+
+
+### (raise _error-value_) - __procedure__
+
+With this procedure you can throw errors using the Lua exception mechanism.
+_error-value_ is usually a string that describes the error. But it can also
+be something else of course.
+
+    (with-exception-handler
+      (lambda (err) (display (str :Exception ": " err)))
+      (lambda ()
+        (when (zero? 0)
+              (raise "Something is weird!"))))
+    ;stdout=> Exception: Something is weird!
+
+See also `(error ...)`, `(with-exception-handler ...)` and `(guard ...)`
+
+
+### (with-exception-handler _handler-func_ _func_) - __procedure__
+
+Executes _func_ and catches any exception that was emitted using `(raise _value_)`
+_handler-func_ is then executed using the _value_ passed to `raise`.
+
+Please note, that no `(raise-continuable ...)` is available, due to
+limitations of Lua exceptions.
+
+    (with-exception-handler
+        (lambda (err) err)
+        (lambda ()
+            (raise 42)
+            99)) ;=> 42
+
+See also `(error ...)`, `(raise ...)` and `(guard ...)`.
+
+interop
+-------
+
+### (. _method-symbol_ _object-value_ _arg-expr_*) - __syntax__
+
+This special syntax allows you to use the Lua method call syntax.
+It is basically a shorthand for: `(($_method-symbol_ _object-value_) _arg-expr_*)`
+and is compiled a bit more neatly down to Lua.
+You may use it if you ever get some Lua object returned or you want to define your own.
+
+	(import (lua basic))
+
+	(let ((obj { :print_hello
+			     (lambda (astr) (lua-print "Hello World! " astr)) }))
+		(.print_hello obj "Welcome!"))
+		; Generated Lua:  obj.print_hello("Welcome!")
+
+	;stdout=> Hello World! Welcome!
+
+The syntax is inspired from Clojure. Please be aware, that if you use
+keywords like `print_hello:` the `:` is removed from the symbol before
+it is used as map key.
+
+
+### (.. _method-symbol_ _object-value_ _arg-expr_*) - __procedure__
+
+This is equivalent to `(. _method-symbol_ _object-value_ _arg-expr_*)` but
+it calls the method _method-symbol_ using the `:` Lua syntax. This passes
+the object table as first argument to the function.
+
+	(import (lua basic))
+
+	(let ((obj { :print_hello
+				 (lambda (self, astr) (lua-print "Hello World! " astr)) }))
+		(..print_hello obj "Welcome!"))
+		; Generated Lua:  obj:print_hello("Welcome!")
+		; Equivalent to:  obj.print_hello(obj, "Welcome!")
+
+	;stdout=> Hello World! Welcome!
+
+io
+--
+
+### (display _value_ [_port_]) - __procedure__
+
+This procedure prints a human readable representation of _value_.
+In case of _value_ being a string, the string is printed directly.
+Other values will be printed as if passed to `write`.
+
+_port_ may be any Lua filehandle (for example `lua-io-stdout`)
+or the result of `(open-output-string)`.
+
+    (display "Hello World!") ;stdout=> Hello World!
+    (display '(1 2 3 x))     ;stdout=> (1 2 3 x)
+
+    (begin
+        (import lua-io)
+        (display '(foo bar) lua-io-stderr))
+
+
+### (displayln _value_ [_port_]) - __procedure__
+
+Same as `display`, but with an additional `newline` afterwards.
+
+
+### (get-output-string _port_) - __procedure__
+
+This method returns the complete output that was written to _port_.
+_port_ must be the return value of `(open-output-string)`.
+
+Alternatively you may pass a list, which is then concatenated
+and the string of that is returned.
+
+    (let ((out (open-output-string)))
+        (display '(x "foobar") out)
+        (get-output-string out))
+    ;=> "(x foobar)"
+
+    (let ((out []))
+        (display '(x "foobar") out)
+        (get-output-string out))
+    ;=> "(x foobar)"
+
+
+### (newline [_port_]) - __procedure__
+
+This procedure writes an end of line to the _port_.
+See also `(display)`.
+
+    (begin
+      (display "Hello World!")
+      (newline) ;stdout=> Hello World!\n
+
+
+### (open-output-string) - __procedure__
+
+Creates an output port for use everywhere in LAL where a _port_
+is required. (See also `(display ...)` or `(write ...)` for example).
+
+Inplace of a _port_ you can always pass a list (Lua table)
+that will be modified by the output procedures.
+
+    (let ((out (open-output-string)))
+        (display '(x "foobar") out)
+        (get-output-string out))
+    ;=> "xfoobar"
+
+    (let ((out []))
+        (display '(x "foobar") out)
+        (get-output-string out))
+    ;=> "xfoobar"
+
+
+### (write _value_ [_port_]) - __procedure__
+
+This procedure prints a serialized representation of _value_, that
+can be read using `read` or `read-str` later.
+
+_port_ may be any Lua filehandle (for example `lua-io-stdout`)
+or the result of `(open-output-string)`.
+
+    (write "Hello World!") ;stdout=> "Hello World!"
+    (write '(1 2 3 x))     ;stdout=> (1 2 3 x)
+
+    (begin
+        (import lua-io)
+        (write '(foo bar) lua-io-stderr))
+
+
+### (writeln _value_ [_port_]) - __procedure__
+
+Same as `write`, but with an additional `newline` afterwards.
+
+iterative
+---------
+
+### (do-each (_key-sym_ _value-sym_ _map-expr_) _sequence_) - __syntax__
+
+Iterates over the value of _map-expr_, binding the variables _key-sym_ and _value-sym_ to the
+corresponding key/value pair and executing _sequence_ for each pair.
+
+    (let ((keys []) (vals []))
+        (do-each (k v { :a 10 :b 20 :c 30 })
+            (push! keys k)
+            (push! vals v))
+        keys)
+    ;=> (:a :b :c)
+
+
+### (do-each (_val-sym_ _list-expr_) _sequence_) - __syntax__
+
+Iterates over the value of _list-expr_, binding the variable _val-sym_ to the
+current item of the list and executing _sequence_ for each item.
+
+    (let ((non-zero-vals []))
+        (do-each (v [ 0 322 0 493 0 12 212 3 40 ])
+            (when (not (zero? v))
+                (push! non-zero-vals v)))
+        non-zero-vals)
+    ;=> (322 493 12 212 3 40)
+
+
+### (for (_count-var-symbol_ _start-idx_ _end-idx_ [_increment-num_]) _sequence_) - __syntax__
+
+This form represents a simple counting loop. It counts by _increment-num_ from _start-idx_
+until _end-idx_ is reached. The index is bound to _count-var-symbol_.
+
+    (let ((nums []))
+      (for (i 0 4)
+        (push! nums i))
+      nums)
+    ;=> (0 1 2 3 4)
+
+lists
+-----
+
+### (cons _item-value_ _list-value_) - __procedure__
+
+Forms a new list that contains _item-value_ followed by
+the contents of _list-value_. It does a shallow copy of _list-value_.
+
+    (cons 'a ['b 'c]) ;=> (a b c)
+
+
+### (cons! _item-value_ _list-value_) - __procedure__
+
+This prepends _item-value_ to _list-value_ by mutating the _list-value_.
+
+    (let ((l ['b 'c]))
+      (cons! 'a l)
+      l)
+    ;=> (a b c)
+
+
+### (for-each _function_ _list_+) - __procedure__
+
+This procedure calls _function_ for each item in the _list_.
+If multiple lists are passed, the _function_ is called with as many arguments
+as there are lists.
+The _function_ is called as long as there is still an item in any of the lists.
+
+In contrast to `map` this function does not collect the returned values
+and only executed _function_ purely for it's side effects.
+
+    (let ((sum 0))
+        (for-each (lambda (x)
+                (set! sum (+ sum x)))
+             '(1 2 3 4)))
+    ;=> 10
+
+    (let ((out []))
+      (for-each (lambda (a b) (append! out [a b])) '(1 2) '(x y))
+      out)
+    ;=> (1 x 2 y)
+
+
+### (length _list-arg_) - __procedure__
+
+Returns the length/number of items in _list-arg_.
+Be aware that Lua tables can't have holes that contain `nil`.
+
+
+### (list _arg_+) - __procedure__
+
+Returns a new list containing the values of the arguments.
+
+    (list 1 2 3 4)   ;=> (1 2 3 4)
+    (list 1 'x 3 4)  ;=> (1 x 3 4)
+
+
+### (list-ref _list_ _index_) - __procedure__
+
+Returns the element at _index_ in _list_.
+
+    (list-ref [1 :lol 3] 1) ;=> :lol
+
+
+
+### (list-set! _list_ _index_ _value_) - __procedure__
+
+Assigns _value_ to _index_ in _list_.
+
+    (let ((l [4 5 6]))
+      (list-set! l 3 7)
+      l)
+    ;=> (4 5 6 7)
+
+
+
+### (map _function_ _list_+) - __procedure__
+
+This procedure calls _function_ for each item in the _list_.
+If multiple lists are passed, the _function_ is called with as many arguments
+as there are lists.
+The _function_ is called as long as there is still an item in any of the lists.
+
+The return values of the _function_ are collected in a new list that
+is returned.
+
+    (let ((sum 0))
+        (map (lambda (x)
+                (set! sum (+ sum x)))
+             '(1 2 3 4)))
+    ;=> (1 3 6 10)
+
+    (map (lambda (a b) [a b]) '(1 2) '(x y))
+    ;=> ((1 x) (2 y))
+
+
+### (nil? _value_) - __procedure__
+
+Returns true if _value_ is the `nil` value.
+And only then.
+
+    (nil?   nil)     ;=> #t
+    (nil?   [])      ;=> #f
+    (nil?   '())     ;=> #f
+    (nil?   {})      ;=> #f
+    (nil?   0)       ;=> #f
+    (nil?   "")      ;=> #f
+
+
+### (pop! _list_ [_num_]) - __procedure__
+
+Removes the last _num_ elements (at least 1 if _num_ is not given)
+from _list_ and returns it.
+
+    (let ((l [8 9 10]))
+      (pop! l)  ;=> 10
+      (pop! l)  ;=> 9
+      (pop! l)) ;=> 8
+
+
+### (push! _list_ _value_) - __procedure__
+
+Appends the _value_ to the end of _list_.
+
+scope
+-----
+
+### (define (_symbol_ [_parameters_]) _sequence_) - __syntax__
+
+Binds the _symbol_ inside the current lexical scope to a function.
+It's syntactic sugar for:
+
+    (define _symbol_
+        (lambda ([_parameters_]) _sequence_))
+
+To define the equivalent of `(lambda arglist ...)` use
+`(define (funcname . arglist) ...)`.
+
+
+### (define _symbol_ _expression_) - __syntax__
+
+Binds the _symbol_ inside the current lexical scope to the
+evaluated value of _expression_.
+
+    (let ((x 10))
+        (define y 30)
+        (+ x y))
+    ;=> 40
+
+
+### (define-global _symbol_ [_value_]) - __syntax__
+
+Defines a global variable _symbol_. And optionally assigns _value_.
+
+    (begin
+        (let ((x 10))
+            (define-global y (* x 2)))
+        y)
+    ;=> 20
+
+strings
+-------
+
+### (str _value_*) - __procedure__
+
+This is a shorthand for `(str-join "" _value_*)`.
+It basically creates a human readable representation of each value
+in string form like `(display ...)` would do and concatenates the
+values.
+
+    (let ((x (+ 1 2 3)))
+        (str "foo" 123  x)) ;=> "foo1236"
+
+
+### (str-join _separator_ _value_*) - __procedure__
+
+This procedure converts all _value_ arguments to a string using
+the same internal procedure that `(display ...)` uses to convert
+LAL values to strings. This means: strings, symbols, keywords, lists and
+maps are converted into a human readable form. Strings are directly
+inserted without a change, except when they are prefixed with
+a symbol char `"\xFE"` or a keyword char `"\xFD"`.
+
+    (str-join "," "one word" another-word: 'and-a-symbol '(1 2 3))
+    ;=>"one word,another-word,and-a-symbol,(1 2 3)"
+
+If you need the Lua equivalent, you are free to `(import (lua table))`
+and use `(lua-table-concat ["\xFE;123" "foobar"] ",")`:
+
+    (begin
+        (import (lua table))
+        (lua-table-concat [(quote "\xFE;123") "foobar"] ","))
+    ;=>123,foobar   ; notice, that we don't have quotes. Thats because the
+                    ; LAL printer recognizes Lua strings that start with "\xFE"
+                    ; as symbols.
+
+symbols
+-------
+
+### (keyword->string _sym-value_) - __procedure__
+
+This procedure converts the keyword _sym-value_ to a string.
+On symbols this procedure does the same as `symbol->string`.
+
+    (keyword->string foo:)  ;=> "foo"
+
+
+### (keyword? _value_) - __procedure__
+
+Returns true if _value_ is a keyword. A keyword in LAL is a special form
+of symbols, which always evaluate to themself. Any symbol that ends with
+a colon `:` is a keyword.
+
+(On the Lua side these are represented by a "\xFD" prefixed string.)
+
+    (keyword? 'foobar)      ;=> false
+    (keyword? foobar:)      ;=> true
+    (keyword? "foobar")     ;=> false
+    (keyword? "\xFElol")    ;=> false
+    (keyword? "\xFDlol")    ;=> true
+
+
+### (string->keyword _string-value_) - __procedure__
+
+This procedure converts the _string-value_ into a keyword.
+
+    (string->keyword "foo")     ;=> foo:
+    (string->keyword "foo-bar") ;=> foo-bar:
+
+
+### (string->symbol _string-value_) - __procedure__
+
+This procedure converts the _string-value_ into a symbol.
+This might be useful for matching certain symbols or writing macros.
+
+    (string->symbol "foo-bar") ;=> foo-bar
+
+
+### (symbol->string _sym-value_) - __procedure__
+
+This procedure converts the symbol _sym-value_ to a string.
+
+    (symbol->string 'x->y) ;=> "x->y"
+
+
+### (symbol? _value_) - __procedure__
+
+Returns true if _value_ is a symbol. A symbol is represented
+as string that is prefixed with a `"\xFE"` character on the Lua
+side.
+
+Please note, that also a keyword is a symbol.
+
+    (symbol? 'foobar)      ;=> true
+    (symbol? foobar:)      ;=> false
+    (symbol? "foobar")     ;=> false
+    (symbol? "\xFElol:")   ;=> true
+    (symbol? "\xFDlol")    ;=> false
+    (symbol? "\xFEabc")    ;=> true
+
+
+syntax-compiler
+---------------
+
+### (current-source-pos) - __syntax__
+
+Returns a string that identifies the current position in the source code.
+Example:
+
+    (import (lal syntax-compiler))
+
+    (begin
+         (display A:)
+         (display (lal-syntax-compiler-current-source-pos))
+         (display B:))
+
+
+### (debug-print-output) - __syntax__
+
+This method sets a flag in the compiler, so that it will print out the generated
+Lua code after compilation together with the line and file in which this
+form is used.
+
+    (import (lal syntax-compiler))
+
+    (begin
+         (displayln A:)
+         (lal-syntax-compiler-debug-print-output)
+         (displayln B:))
+
+    ;stdout=>
+        DEBUG-PRINT-OUTPUT testdeb.lal:5> [
+        if (os.getenv("LALRT_LIB")) then package.path = package.path .. ";" .. os.getenv("LALRT_LIB") .. '/lal/?.lua'; end
+        ;
+        local _ENV = { _lal_lua_base_ENV = _ENV, _lal_lua_base_pairs = pairs };
+        for k, v in _lal_lua_base_pairs(_lal_lua_base_ENV) do _ENV["_lal_lua_base_" .. k] = v end;
+        local _lal_req1 = _lal_lua_base_require 'lal.lang.builtins';
+        local strip_kw = _lal_req1["strip-kw"];
+        local strip_sym = _lal_req1["strip-sym"];
+        local display = _lal_req1["display"];
+        --[[testdeb.lal:1] ]
+        --[[testdeb.lal:3] ]
+        --[[testdeb.lal:4] ]
+        display("\xFDA");
+        return display("\xFDB");
+        --[[testdeb.lal:1] ]
+        ]
+
+Please note, that the actual output is compiler dependent and may differs
+between versions.
+
+
+### (display-compile-output [_tag_] _expression_) - __syntax__
+
+This syntax will print out the compilation output of _expression_ to
+standard output. It will be marked using _tag_. This form is very handy for
+debugging problems in the code generation and/or the compiler itself.
+
+    (import (lal syntax-compiler))
+    (lal-syntax-compiler-display-compile-output "test out" (+ 10 20))
+    ;stdout=> LAL-COMPILE-OUT[test out] CHUNK{{{
+    ;         }}} VALUE[expr:unknown:nil:returning]{{{ (10 + 20) }}}
+
+A __CHUNK__ contains usually only code that has side effects and does not directly
+provide a value for the next expression which uses the value of the currently compiled
+expression. The __VALUE__ is the actual Lua code that returns an expression.
+This can be a full expression like `(10 + 20)` or also a function like
+`function (a, b) ... end`. Often it is just some temporary variable name that
+was declared in/before the __CHUNK__.
+
+Meaning of the fields in `[ ... ]`:
+    expression-type         - type of the expression, used by the code generator
+                              to determine how to handle the VALUE of the chunk.
+                              Lua does make a difference between statements and expressions,
+                              so we need to explictly assign some expressions
+                              to some temporary if the VALUE has sideeffects.
+                              Types:
+                                "sideeffectFree"
+                                "expr"
+                                "stmt"
+    compile-type            - the type of the value returned by the generated code
+                              generator node. Used for primitive data literals
+                              to apply some optimizations. For example when accessing
+                              fields in tables. Some possible values:
+                                "string"
+                                "number"
+                                "boolean"
+                                "keyword"
+                                "symbol"
+                                "nil"
+    raw-string-val          - the raw value as string. useful in case some optimizations
+                              based on compile-type are done. Usually only filled for
+                              "keyword", "symbol" or "string".
+    is-returning            - shows "returning" if the expression is located in a
+                              returning branch or whether it actually returns due to
+                              a `(return ...)`. This helps the LAL compiler to eliminate
+                              dead code after a return, so that the Lua compiler
+                              does not complain.
+
+sys-util
+--------
+
+### (sys-proc-spawn-lal _lal-code-string_ _lal-code-name_) - __procedure__
+
+This procedure works analog to `proc-spawn` and adds some prelude
+code for running LAL code in a new thread. All communication with that
+LAL thread works using the message passing API `mp-send` `mp-wait`.
+
+Example:
+
+    ---- test.lal ------
+    (import (rt mp))
+    (displayln "FOOOABBB")
+    { main: (lambda ()
+              (displayln MAIN-PROC:)
+              (mp-send end:)) }
+    ---- END test.lal ----
+
+    (import (rt mp))
+    (import (rt proc))
+    (import (sys proc))
+
+    (let ((p (sys-proc-spawn-lal #<LAL
+        (begin
+          (import (rt mp))
+          (import (test))
+          (test-main))
+    LAL "XX")))
+      (mp-wait-infinite end:))
+
+    (displayln ENDEND:)
+
+values
+------
+
+### (= _value-a_ _value-b_ _value-x_*) - __procedure__
+
+Compares all arguments, and returns true if they are equal in the
+sense of `(eqv? ...)`. In Scheme this procedure only works on numbers,
+but Lua doesn't have special number comparation operators, so we just
+use the Lua `==`.
+
+
+### (eq? _value-a_ _value-b_) - __procedure__
+
+This procedure is the same as `(eqv? ...)` in LAL
+and not more fine grained than in Scheme.
+
+
+### (equal? _value-a_ _value-b_) - __procedure__
+
+Compares the two values _value-a_ and _value-b_ structurally.
+This means, for structured values like lists or maps it does a recursive
+comparsion. And for all other values, it returns what `(eqv? _value-a_ _value-b_)`
+would return.
+
+    (equal? '((a b) { :x 10 }) '((a b) { :x 10 })) ;=> #true
+
+Please note that `equal?` returns false once it hits a cycle in any of the
+values. Thats not perfect, but at least it will terminate.  This is a
+difference to R7RS Scheme, which requires `equal?` to compare the data
+structures even with cycles correctly.
+(R5RS did not even require it to terminate.)
+
+
+### (eqv? _value-a_ _value-b_) - __procedure__
+
+This procedure compares _value-a_ and _value-b_ using
+the `==` operator from Lua. It basically returns true,
+when the value's types are equal and their actual values are
+equal. Only lists or maps that are stored in the same memory
+location are equal.
+
+
+### (quasiquote _value_) reader-syntax: ````_value_ - __syntax__
+
+This is LALs quasiquotation. It quotes the _value_ in such a way,
+that it evaluates to itself. If the _value_ is a list, then the
+special quasiquote syntaxes `(unquote ...)` and `(unquote-splicing ...)`
+are evaluated and expanded properly.
+
+This syntax is usually very helpful when defining macros with `(define-macro ...)`:
+
+    (define-macro (macro-add a b)
+        `(+ ,a ,@b))
+	(macro-add 30 (1 3 4 5)) ;=> 43
+
+
+### (quote _value_) reader-syntax: '_value_ - __syntax__
+
+Quotes the _value_ in that way, that it evaluates to itself:
+
+    (symbol->string 'a)     ;=> "a"
+    '(a b c d)              ;=> (a b c d)
+    ['a 'b 'c 'd]           ;=> (a b c d)
+
+
+### (read-str _string_) - __procedure__
+
+This procedure parses the _string_ and returns the value as LAL data structure.
+This procedure basically calls into the LAL parser to read the LAL value.
+It is meant to use in conjunction with the `write` procedure and
+can be useful for storing data structures in files.
+
+    (let ((somelist (read-str "(1 2 3 4 test)")))
+      somelist)
+    ;=>(1 2 3 4 test)
+
+
+
+### (unquote _value_) reader-syntax: ,_value_ - __syntax__
+
+Useful only inside a quasiquotation. It unquotes the _value_ and
+inserts the evaluated value inside the quasioquoted result.
+
+	`(1 2 ,(+ 1 2)) ;=> (1 2 3)
+
+
+### (unquote-splicing _value_) reader-syntax: ,@_value_ - __syntax__
+
+Useful only insode a quasiquotation. It unquotes the _value_,
+evaluates it, and inserts the value into the quasiquoted list.
+If the _value_ evaluates to a list, the items are directly
+inserted into the resulting list.
+
+	`(1 2 ,@(list 3 4)) ;=> (1 2 3 4)
+
+Compared with `(unquote ...)`:
+
+	`(1 2 ,(list 3 4))  ;=> (1 2 (3 4))
+
+
+### (write-str _value_) - __procedure__
+
+This procedure serializes the value it gets as it's first argument
+and returns a string representation of it.
+The syntax is compatible with the LAL parser and the `read-str` procedure.
+
+    (let ((somelist [1 2 3 [1 2 3] ])
+          (clone (read-str (write-str somelist))))
+      clone)
+    ;=> [1 2 3 [1 2 3] ]
+
+LALRT Specific Packages
+=======================
+
+http
+----
+
+(import (rt http))
+
+### (http-bind _port-number_) - __procedure__
+
+Binds a HTTP server to the TCP _port-number_.
+Returns a token, that can be used for waiting on new requests.
+If there is an error, an exception will be thrown.
+
+    (let ((f (http-bind 18099)))
+      (do ((req (mp-wait f) (mp-wait f)))
+          (#t #t)
+        (let ((handle (@1 f)))
+          (http-response
+           handle   ; srv-handle
+           (@1 req) ; req-token
+           { :action :json :data { :x 1 :y 2 } }))))
+
+
+### (http-free _server-handle_) - __procedure__
+
+Frees the HTTP-Server handle.
+
+
+### (http-get _url_ _options_) - __procedure__
+
+A very simple HTTP GET implementation that returns a data structure
+containing the response. And conveniently decodes JSON based on the
+Content-Type of the response.
+Throws an exception if an error occured.
+_options_ is a map that can contain following items:
+
+    {cookies:  _map-of-cookie-names-and-values_}
+
+    (let ((resp (http-get "http://localhost/test.json")))
+      (display (str "Status/Reason:" ($:status resp) ($:reason resp)))
+      (display (str "Got JSON:" (write-str ($:data resp))))
+      (display (str "Body:" ($:body resp))))
+
+
+### (http-response _server-handle_ _request-token_ _response-data_) - __procedure__
+
+Sends the _response-data_ back to the _server-handler_.
+_response-data_ should be a map, that should provide the `:action` key
+to set the kind of response.
+Throws an exception if an error occured (for example, when replying to a
+request twice).
+This is a possible map:
+
+    { :action :json :data some-data-structure }
+    { :action :file :path "webdata/index.html" } ; content-type is automatically generated
+    { :action :file :path "webdata/index.html" :contenttype "text/html; charset=utf-8" }
+    { :action :data :data "foobar" :contenttype "text/plain; charset=utf-8" }
+
+
+For an example see `http-bind`
+
+lal
+---
+
+(import (rt lal))
+
+### (lal-dump _data_) - __procedure__
+
+Returns a serialized form of _data_ as LAL-Datastructure.
+
+mp
+--
+
+(import (rt mp))
+
+### (mp-add-default-handler _priority-num_ _callback-function_) - __procedure__
+
+@mp procedure (mp-add-default-handler _callback-function_)
+
+Installs the _callback-function_ as default handler for any unhandled
+messages to the current process/port.
+The numeric value of _priority-num_ decides the order in which the default handlers
+are called. Where lower means earlier, and higher means later. Default should be 0.
+
+
+### (mp-check-available _token-string_) - __procedure__
+
+`mp-check-available` returns immediately after checking for matching messages.
+The _token-string_ or the elements of the _token-string-list_ are matched
+against the third element of the message if the message is a list.
+If the message is a map, it's matched against the `:command` key.
+You can use `nil` or the empty string "*" token as catch all token,
+to receive any message.
+
+See also `mp-wait-infinite` and `mp-wait`
+
+   (begin
+       (proc-spawn "(mp-send [foo: 123])")
+       (let ((m (mp-check-available foo:)))
+           (when m (@1 m)))) ;=> 123 or nil if none available
+
+
+### (mp-remove-default-handler _token_) - __procedure__
+
+Uninstalls the default handler with the given _token_.
+The _token_ is returned by `mp-add-default-handler` upon registration ofa default handler.
+
+
+### (mp-send _pid-number_ _message-data_) - __procedure__
+
+@mp procedure (mp-send _message-data_)
+
+Sends the _message-data_ to the process with _pid-number_ and
+returns the unique token of the message (see also `mp-wait`).
+If _pid-number_ is omitted, the message is directly emitted to
+the parent process.
+
+    (let ((f (mp-send 0 [ping:]))
+          (r (mp-wait-infinite f)))
+      (assert (eq? (.result r) pong:)))
+
+
+### (mp-set-debug-logging _bool_) - __procedure__
+
+Enables/Disables extensive message logging of the current process.
+
+
+### (mp-token) - __procedure__
+
+Returns a new token, that can be passed to various functions to
+have a unqiue value that can be used to register callbacks or waiting
+points for (mp-redirect) or (mp-wait)
+
+
+### (mp-wait _token-string_ _wait-ms_) - __procedure__
+
+Waits for a message to arrive in the time [_wait-ms_] milliseconds.
+The _token-string_ or the elements of the _token-string-list_ are matched
+against the third element of the message if the message is a list.
+If the message is a map, it's matched against the `:command` key.
+You can use `nil` or the empty string "*" token as catch all token,
+to receive any message.
+
+There are two types of layouts for messages:
+    - list: (<source pid> <unique token> <message command> <arg>*)
+    - map: { :command <message command> :pid <source pid> :token <unique token> }
+The <unique token> and the <source pid> can be used to reply to a message
+if the sender expects this.
+
+See also `mp-wait-infinite` and `mp-check-available`.
+
+   (begin
+       (proc-spawn "(mp-send [foo: 123])")
+       (let ((m (mp-wait foo: 1000)))
+           (@1 m))) ;=> 123
+
+
+### (mp-wait-infinite _token-string_) - __procedure__
+
+`mp-wait-infinite` waits infinitely until a message arrived.The _token-string_ or the elements of the _token-string-list_ are matched
+against the third element of the message if the message is a list.
+If the message is a map, it's matched against the `:command` key.
+You can use `nil` or the empty string "*" token as catch all token,
+to receive any message.
+
+There are two types of layouts for messages:
+    - list: (<source pid> <unique token> <message command> <arg>*)
+    - map: { :command <message command> :pid <source pid> :token <unique token> }
+The <unique token> and the <source pid> can be used to reply to a message
+if the sender expects this.
+
+   (begin
+       (proc-spawn "(mp-send [foo: 123])")
+       (let ((m (mp-wait-infinite foo:)))
+           (@1 m))) ;=> 123
+
+proc
+----
+
+(import (rt proc))
+
+### (proc-pid) - __procedure__
+
+Returns the internal process/port ID of this thread.
+This will be 0 for the main thread.
+
+    (proc-pid) ;=> 0 ; for main/first process/port
+
+
+### (proc-spawn _init-program-text_ [_args-data_]) - __procecdure__
+
+Creates a new process with the init program text _init-program-text_.
+The started init programm is _args-data_ passed as arguments.
+Returns the `pid` of the newly created process.
+
+    (let ((p (proc-spawn "(mp-send [foobar:])")))
+      (mp-wait foobar:))
+
+
+### (proc-terminated?) - __procedure__
+
+Returns `#true` if thread should stop processing and terminate itself.
+
+    (do () ((not (proc-terminated)) nil)
+      #;(do iterative thread stuff here))
+
+qt
+--
+
+### (qt-delete _object_) - __procedure__
+
+Deletes/Destroys an object/pointer that was created using the
+qt-* API.
+
+   (let ((le (qt-line-edit-create ...)))
+     ...
+     (qt-delete le))
+
+
+### (qt-exec [_init-cb_]) - __procedure__
+
+Start the Qt event loop.
+_init-cb_ can be a callback or a message, which will be emitted to
+the current process (and this message can be received using a default.
+handler for messages)
+
+   (begin
+     ; Send a message to yourself (proc-pid), it will be called by
+     ; the Qt event loop in (qt-exec).
+     (mp-send (proc-pid) [after-init:])
+     (mp-add-default-handler
+      (lambda (msg)
+        (when (eqv? (@2 msg) after-init:)
+          #;(called once the main event loop executes.
+             do initialization stuff here!))))
+     (qt-exec))
+
+Alternatively:
+   (begin
+     ; Let qt-exec send the message:
+     (mp-add-default-handler
+      (lambda (msg)
+        (when (eqv? (@2 msg) after-init:)
+          #;(called once the main event loop executes.
+             do initialization stuff here!))))
+     (qt-exec after-init:))
+
+Alternatively:
+   (begin
+     (qt-exec (lambda () #;(called once the main event loop executes.))))
+
+
+### (qt-hide _object_) - __procedure__
+
+Calls QWidget::hide on _object_.
+
+
+### (qt-line-edit-create _parent_ _size-list_) - __procedure__
+
+Creates a line editor view with window size according to _size-list_.
+It returns an object handle for further reference.
+The handle needs to be destroyed using `(qt-delete)`
+
+    (define line-edit (qt-line-edit-create [600, 300]))
+    (qt-show line-edit)
+    (qt-reg line-edit key-press:
+     (lambda (key) (when (= ($name: key) 'q') (qt-delete line-edit))))
+
+
+### (qt-line-edit-set-lines _line-edit-obj_ _list-of-lines_) - __procedure__
+
+Sets the lines which the line editor should show.
+The _list-of-lines_ is a list of line structures, which define how the
+line is displayed. Each line is itself a list of following attributes:
+
+    [
+     _string-special-text_       - Text label on variable width left part.
+     _bool-is-selected_          - Should be true, if the line is selected.
+     _bool-is-highlighted-       - Should be true, if the line is highlighted.
+     _string-special-text-right_ - Text label with fixed width to the right.
+                                   Usabel for meta information.
+                                   Width can be set with
+                                   (qt-line-edit-set-meta-col-width)
+     _string-special-text-left_  - The text in the left most padding area.
+                                   Usable for displaying small icons/marks.
+                                   Width can be set with
+                                   (qt-line-edit-set-pad-col-width)
+    ]
+
+A _special-text_ can be just a simple text string, or list, that can contain
+following values to control how it is displayed:
+
+    _string_    - Will be the displayed text
+    _number_    - A positive number sets the foreground color of the next text
+                   A negative number sets the background color of the next text
+    _list_      - A meta element, the first element defines the type.
+
+Following meta elements are defined:
+
+    [image: _image-index_]     - Displays an inline image, images can be loaded
+                                 using (qt-line-edit-set-image).
+
+
+### (qt-quit) - __procedure__
+
+Exit the Qt event loop.
+
+
+### (qt-resize _object_ [_w_ _h_]) - __procedure__
+
+Calls QWidget::resize on _object_.
+
+    (define q-wid (qt-splitter-create ...))
+    (qt-resize q-wid [300 300])
+
+
+### (qt-show _object_) - __procedure__
+
+Calls QWidget::show on _object_.
+
+
+### (qt-splitter-create _parent_ [_widgets_]) - __procedure__
+
+Creates a splitter widget on the _parent_, for _widgets_.
+
+
+sql
+---
+
+(import (rt sql))
+
+### (sql-close _db-handle_) - __procedure__
+
+Closes any open SQL statement.
+If there is an error, an exception will be thrown.
+
+For usage, see `sql-session`.
+
+
+### (sql-destroy _db-handle_) - __procedure__
+
+Destroys the database handle. Any further usage of it is an evil error!
+
+For usage, see `sql-session`.
+
+
+### (sql-execute! _db-handle_ _sql-data-struct_) - __procedure__
+
+Returns a boolean whether there are any results to be fetched.
+If it returns `#false` there are no results to be fetched. But the
+statement was executed successfully.
+If there is an error, an exception will be thrown.
+
+   (let ((db (sql-session { #(...) }))
+         (has-users (sql-execute! db ["SELECT * FROM users"])))
+     (if has-users (display "got users!")
+                   (display "no users?!")))
+
+
+### (sql-next _db-handle_) - __procedure__
+
+Advances the cursor to the next result row. Returning `#true` if a next
+row is available. `#false` if no further row is available.
+If there is an error, an exception will be thrown.
+
+For usage, see `sql-session`.
+
+
+### (sql-row _db-handle_) - __procedure__
+
+Returns the columns of row as map, with the column names
+in lowercase as keys.
+If there is an error, an exception will be thrown.
+
+For usage, see `sql-session`.
+
+
+### (sql-session _options-data_) - __procedure__
+
+Returns a database handle for making SQL-Queries.
+If there is an error, an exception will be thrown.
+
+    (let ((db (sql-session
+               { :driver "sqlite3" :file ":memory:" }))
+           (sql ["SELECT * FROM kunden"]))
+      (do ((ok  (sql-execute! db sql) (sql-next db))
+           (row (sql-row db) (sql-row db)))
+          (ok (sql-close db))
+        (display row))
+      (sql-destroy db))
+
+sys
+---
+
+(import (rt sys))
+
+### (sys-exec! _mode-string-or-keyword_ _prog-path_ _arg-list_) - __procedure__
+
+Starts the executable _prog-path_ with the arguments _arg-list_.
+The _mode_ decides, what is returned. Currently only the `simple:` mode
+is implemented. And it returns a data structure, that contains the exit code,
+and the complete output of the stderr and stdout streams.
+If an error occured, it will be logged and `exit-status` will be `nil`.
+
+    (exec! simple: "./foo.exe" [])
+    ;=> { exit-status: 0 stderr: "..." stdout: "..." }
+
+
+### (sys-file-exists? _path-string_) - __procedure__
+
+Returns `#true` if _path-string_ points to an existing file/directory.
+
+    (sys-file-exists? "C:/Windows") ;=> #true
+    (sys-file-exists? "C:/FoobarNotExists.txt") ;=> #false
+
+
+### (sys-find _path-string_ _flags-string_ _regex-or-regex-list_) - __procedure__
+
+This procedure searches (optionally recursively) through the directory at
+_path-string_ and returns a list of filenames.
+_flags-string_ may contain one of the following mode chars:
+   "R"       - Search recursively.
+   "i"       - Regex matching is done case insensitive.
+   "d"       - Only directories.
+   "D"       - Only non-directories.
+   "f"       - Only regular files.
+   "F"       - Anything but regular files.
+
+   "a"       - Returns absolute paths.
+   "c"       - Returns canonical paths.
+   "r"       - Returns relative paths.
+   "g"       - Returns generic path.
+   "Y"       - Returns a structure containing status information about the file.
+                 (Can be combined with a, c, r)
+   "y"       - The info structure that is returned with 'Y' contains also the symlink_status.
+
+_regex-or-regex-list_ may contain one or more regexes that the files may match.
+Matching one is enough
+
+   (sys-find "." "iR" "(.*)\.exe")
+
+util
+----
+
+(import (rt util))
+
+### (util-from-csv _csv-string_ _field-sep_ _row-sep_) - __procedure__
+
+@util procedure (util-from-csv _csv-string_ _field-sep_)
+@util procedure (util-from-csv _csv-string_)
+
+Returns a table like data structure that contains the contents of
+the CSV formatted _csv-string_.
+_field-sep_ contains the field separator, usually something like `,` or `;` (default).
+_row-sep_ contains the row/field set separator,
+usually something like `"\r\n"` (default).
+
+    (util-from-csv "a,b,c\r\nd,e,f" "," "\r\n")
+    ;=> [["a","b","c"],["d","e","f"]]
+
+
+### (util-from-json _string_) - __procedure__
+
+Interpretes _string_ as UTF-8 encoded JSON.
+
+
+### (util-from-utf8 _string_ _dest-encoding-name_) - __procedure__
+
+Decodes the UTF8 _string_ into the _dest-encoding-name_
+Returns the bytes of the result.
+See also `util-to-utf8`.
+
+
+### (util-match _strings_ _regexes_ _return-format-mode-str_) - __procedure__
+
+Matches _strings_ using _regexes_. Can also be just a single string and
+a single regex. Regex format is ECMAScript standard like C++11 uses it.
+
+_strings_ may look like in these examples:
+   _strings_ = _string_
+   _strings_ = [_string_, ...]
+   _strings_ = [[_string_, _replacement_], ...]
+_regexes_ may look like in these examples:
+   _regexes_ = _regex_
+   _regexes_ = [_regex_, _flags_, _match-token_]
+   _regexes_ = [[_regex_, _flags_, _match-token_], ...]
+Where _flags_ and _match-token_ are optional.
+_match-token_ contains some value, that is used to identify the regex that was
+matched.
+_flags_ may be one or multiple of:
+   _flags_:
+       "i"   - case insensitive match
+       "o"   - optimize for matching fast
+       "c"   - collate according to current locale
+       "w"   - widestring match (for UTF-8 input).
+       "k"   - keep first submatch (the string itself) in the output.
+       "0"   - Regex Grammar: ECMAScript (default)
+       "1"   - Regex Grammar: Extended POSIX
+       "2"   - Regex Grammar: Awk POSIX
+       "3"   - Regex Grammar: Grep POSIX
+       "4"   - Regex Grammar: Egrep POSIX
+       "5"   - Regex Grammar: Basic POSIX
+       "6"   - Regex Grammar: Perl Regex syntax (only with boost::regex)
+       "a"   - will match the whole string, instead of just a part of it
+                 against the regex.
+       "g"   - globally match the pattern multiple times.
+                 (does not work with replacements.)
+       "s"   - split up the string using this regex.
+                 (does not work with replacements.)
+_replacement_ may contain:
+       $n      - backreference
+       $&      - entire match
+       $`      - prefix
+       $´      - suffix
+_return-format-mode-str_ may contain:
+       "n"   - string index-numbers
+
+Examples:
+
+  
+; Searching for a match inside a string:
+    (util-re "foobar" "(o+)")  ;=> "oo"
+  
+; Matching a complete string:
+    (util-re "foobar" ["f(o+)bar" "a"]) ;=> "oo"
+    ; or:
+    (util-re "foobar" "^f(o+)bar$") ;=> "oo"
+  
+; Multiple sub-matches:
+    (util-re "foobar" "(o+).*(a+)")  ;=> ("oo" "a")
+  
+; Global match:
+    (util-re "foobarfoobfbffoooorer" ["f(o+)" "g"])  ;=> ("oo" "oo" "oooo")
+    (util-re "foobarfoobfbffoooorer" ["(f(o+))" "g"])
+    ;=> (("foo" "oo") ("foo" "oo") ("foooo" "oooo"))
+  
+; Split string:
+    (util-re "foo, bar ,  baz,boo" ["\s*,\s*" "s"])  ;=> ("foo" "bar" "baz" "boo")
+
+
+### (util-to-csv _data_ _field-sep_ _row-sep_) - __procedure__
+
+@util procedure (util-to-csv _data_ _field-sep_)
+@util procedure (util-to-csv _data_)
+
+Serializes the table data structure _data_ as CSV.
+_field-sep_ contains the field separator, usually something like `,` or `;` (default).
+_row-sep_ contains the row/field set separator,
+usually something like `"\r\n"` (default).
+
+    (util-from-csv "a,b,c\r\nd,e,f" "," "\r\n")
+    ;=> [["a","b","c"],["d","e","f"]]
+
+
+### (util-to-json _data_) - __procedure__
+
+Returns the _data_ structure as JSON and UTF-8 encoded string.
+
+
+### (util-to-utf8 _string-or-bytes_ _source-encoding-name_) - __procedure__
+
+Reencodes the character set of _string-or-bytes_ by interpreting it as
+if it is encoded in _source-encoding-name_.
+Returns an UTF8 encoded text string.
+
+Possible _encoding-names_:
+    - Latin1
+    - ISO-8859-8
+    - UTF-16
+    - UTF-16BE
+    - UTF-16LE
+    - UTF-32
+    - UTF-32BE
+    - UTF-32LE
+    - CP1250 / WINDOWS-1250
+    - 850 / CP850
+And many others that are supported by boost::local (iconv/icu)

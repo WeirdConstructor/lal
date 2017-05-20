@@ -1,0 +1,286 @@
+20161215 05:56:16.389273   trace:0x00002ed8|lal_rt::start_process@process.cpp:42   | *PROCESS START* 0
+20161215 05:56:16.561277   error:0x00002ed8|lal_rt::start_process@process.cpp:51     | *PROCESS EXCEPTION* (0): Error while evaluating lua code [prelude(pid 0)]: [string "prelude(pid 0)"]:16: [makedoc.lal:106] Compiler Error: No such symbol in env: doc-string, in Form: (split-lines doc-string)
+Traceback:
+stack traceback:
+	[C]: in function 'error'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:117: in function 'lal.lang.compiler.err'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:136: in function 'lal.lang.compiler.lookupInEnv'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:541: in function 'lal.lang.compiler.compile'
+	(...tail calls...)
+	...twicklung\hg\qluart\lalrt\lalrtlib/lua/lal/util/list.lua:126: in function 'lal/util/list.map'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:532: in function 'lal.lang.compiler.compile'
+	(...tail calls...)
+	...twicklung\hg\qluart\lalrt\lalrtlib/lua/lal/util/list.lua:126: in function 'lal/util/list.map'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:532: in function 'lal.lang.compiler.compile'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:431: in function 'lal.lang.compiler.compile_block'
+	...g\hg\qluart\lalrt\lalrtlib/lua/lal/lang/syntax_forms.lua:735: in function 'lal/lang/syntax_forms.do-each'
+	...
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:526: in function 'lal.lang.compiler.compile'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:431: in function 'lal.lang.compiler.compile_block'
+	(...tail calls...)
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:526: in function 'lal.lang.compiler.compile'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:403: in function <...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:399>
+	[C]: in function 'xpcall'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:399: in function 'lal.lang.compiler.compile_toplevel'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:571: in function 'lal.lang.compiler.compile_lal_code'
+	C:\Entwicklung\hg\qluart\lalrt\lalrtlib/lua/lal\lal.lua:31: in function 'lal.lal.eval'
+	(...tail calls...)
+	[string "prelude(pid 0)"]:10: in function <[string "prelude(pid 0)"]:9>
+	[C]: in function 'xpcall'
+	[string "prelude(pid 0)"]:15: in function <[string "prelude(pid 0)"]:7>
+	(...tail calls...)
+stack traceback:
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:420: in function 'lal.lang.compiler.compile_toplevel'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:571: in function 'lal.lang.compiler.compile_lal_code'
+	C:\Entwicklung\hg\qluart\lalrt\lalrtlib/lua/lal\lal.lua:31: in function 'lal.lal.eval'
+	(...tail calls...)
+	[string "prelude(pid 0)"]:10: in function <[string "prelude(pid 0)"]:9>
+	[C]: in function 'xpcall'
+	[string "prelude(pid 0)"]:15: in function <[string "prelude(pid 0)"]:7>
+	(...tail calls...)
+
+20161215 05:56:16.791568   error:0x00002bf8|main@main.cpp:54   | *EXCEPTION* 0> Error while evaluating lua code [prelude(pid 0)]: [string "prelude(pid 0)"]:16: [makedoc.lal:106] Compiler Error: No such symbol in env: doc-string, in Form: (split-lines doc-string)
+Traceback:
+stack traceback:
+	[C]: in function 'error'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:117: in function 'lal.lang.compiler.err'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:136: in function 'lal.lang.compiler.lookupInEnv'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:541: in function 'lal.lang.compiler.compile'
+	(...tail calls...)
+	...twicklung\hg\qluart\lalrt\lalrtlib/lua/lal/util/list.lua:126: in function 'lal/util/list.map'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:532: in function 'lal.lang.compiler.compile'
+	(...tail calls...)
+	...twicklung\hg\qluart\lalrt\lalrtlib/lua/lal/util/list.lua:126: in function 'lal/util/list.map'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:532: in function 'lal.lang.compiler.compile'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:431: in function 'lal.lang.compiler.compile_block'
+	...g\hg\qluart\lalrt\lalrtlib/lua/lal/lang/syntax_forms.lua:735: in function 'lal/lang/syntax_forms.do-each'
+	...
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:526: in function 'lal.lang.compiler.compile'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:431: in function 'lal.lang.compiler.compile_block'
+	(...tail calls...)
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:526: in function 'lal.lang.compiler.compile'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:403: in function <...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:399>
+	[C]: in function 'xpcall'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:399: in function 'lal.lang.compiler.compile_toplevel'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:571: in function 'lal.lang.compiler.compile_lal_code'
+	C:\Entwicklung\hg\qluart\lalrt\lalrtlib/lua/lal\lal.lua:31: in function 'lal.lal.eval'
+	(...tail calls...)
+	[string "prelude(pid 0)"]:10: in function <[string "prelude(pid 0)"]:9>
+	[C]: in function 'xpcall'
+	[string "prelude(pid 0)"]:15: in function <[string "prelude(pid 0)"]:7>
+	(...tail calls...)
+stack traceback:
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:420: in function 'lal.lang.compiler.compile_toplevel'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:571: in function 'lal.lang.compiler.compile_lal_code'
+	C:\Entwicklung\hg\qluart\lalrt\lalrtlib/lua/lal\lal.lua:31: in function 'lal.lal.eval'
+	(...tail calls...)
+	[string "prelude(pid 0)"]:10: in function <[string "prelude(pid 0)"]:9>
+	[C]: in function 'xpcall'
+	[string "prelude(pid 0)"]:15: in function <[string "prelude(pid 0)"]:7>
+	(...tail calls...)
+
+20161215 05:56:16.791568   trace:0x00002ed8|lal_rt::start_process@process.cpp:65     | *PROCESS END* 0
+20161215 05:57:07.750512   trace:0x000035e4|lal_rt::start_process@process.cpp:42   | *PROCESS START* 0
+20161215 05:57:08.693174   error:0x000035e4|lal_rt::start_process@process.cpp:51     | *PROCESS EXCEPTION* (0): Error while evaluating lua code [prelude(pid 0)]: [string "prelude(pid 0)"]:16: LAL-Lua Runtime Error: "[string \"*LAL*:makedoc.lal:...\"]:80: table index is nil"
+LAL stack traceback:
+       *LAL: makedoc.lal:34 [sectionalize]
+       *LAL: makedoc.lal:59 [write_records]
+       *LAL: makedoc.lal:116 [nil]
+        Lua: =[C]:-1 [xpcall]
+        Lua: @C:\Entwicklung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\util.lua:226 [nil]
+        Lua: prelude(pid 0):10 [nil]
+        Lua: =[C]:-1 [xpcall]
+        Lua: prelude(pid 0):15 [nil]
+Lua stack traceback:
+	[string "*LAL*:makedoc.lal:..."]:80: in upvalue 'sectionalize'
+	[string "*LAL*:makedoc.lal:..."]:137: in local 'write_records'
+	[string "*LAL*:makedoc.lal:..."]:319: in main chunk
+	[C]: in function 'xpcall'
+	...twicklung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\util.lua:226: in function 'lal.lang.util.exec_lua_code_func'
+	(...tail calls...)
+	[string "prelude(pid 0)"]:10: in function <[string "prelude(pid 0)"]:9>
+	[C]: in function 'xpcall'
+	[string "prelude(pid 0)"]:15: in function <[string "prelude(pid 0)"]:7>
+	(...tail calls...)
+stack traceback:
+	...twicklung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\util.lua:229: in function 'lal.lang.util.exec_lua_code_func'
+	(...tail calls...)
+	[string "prelude(pid 0)"]:10: in function <[string "prelude(pid 0)"]:9>
+	[C]: in function 'xpcall'
+	[string "prelude(pid 0)"]:15: in function <[string "prelude(pid 0)"]:7>
+	(...tail calls...)
+
+20161215 05:57:08.818965   error:0x00001ce4|main@main.cpp:54   | *EXCEPTION* 0> Error while evaluating lua code [prelude(pid 0)]: [string "prelude(pid 0)"]:16: LAL-Lua Runtime Error: "[string \"*LAL*:makedoc.lal:...\"]:80: table index is nil"
+LAL stack traceback:
+       *LAL: makedoc.lal:34 [sectionalize]
+       *LAL: makedoc.lal:59 [write_records]
+       *LAL: makedoc.lal:116 [nil]
+        Lua: =[C]:-1 [xpcall]
+        Lua: @C:\Entwicklung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\util.lua:226 [nil]
+        Lua: prelude(pid 0):10 [nil]
+        Lua: =[C]:-1 [xpcall]
+        Lua: prelude(pid 0):15 [nil]
+Lua stack traceback:
+	[string "*LAL*:makedoc.lal:..."]:80: in upvalue 'sectionalize'
+	[string "*LAL*:makedoc.lal:..."]:137: in local 'write_records'
+	[string "*LAL*:makedoc.lal:..."]:319: in main chunk
+	[C]: in function 'xpcall'
+	...twicklung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\util.lua:226: in function 'lal.lang.util.exec_lua_code_func'
+	(...tail calls...)
+	[string "prelude(pid 0)"]:10: in function <[string "prelude(pid 0)"]:9>
+	[C]: in function 'xpcall'
+	[string "prelude(pid 0)"]:15: in function <[string "prelude(pid 0)"]:7>
+	(...tail calls...)
+stack traceback:
+	...twicklung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\util.lua:229: in function 'lal.lang.util.exec_lua_code_func'
+	(...tail calls...)
+	[string "prelude(pid 0)"]:10: in function <[string "prelude(pid 0)"]:9>
+	[C]: in function 'xpcall'
+	[string "prelude(pid 0)"]:15: in function <[string "prelude(pid 0)"]:7>
+	(...tail calls...)
+
+20161215 05:57:08.817964   trace:0x000035e4|lal_rt::start_process@process.cpp:65     | *PROCESS END* 0
+20161215 06:01:37.237715   trace:0x0000391c|lal_rt::start_process@process.cpp:42   | *PROCESS START* 0
+20161215 06:01:37.362788   error:0x0000391c|lal_rt::start_process@process.cpp:51     | *PROCESS EXCEPTION* (0): Error while evaluating lua code [prelude(pid 0)]: [string "prelude(pid 0)"]:16: [makedoc.lal:106] Compiler Error: Bad let binding spec, element 5 is not a list., in Form: (let ((lines (split-lines doc-string)) (first (@ 0 lines)) (rest (list-util-drop 1 lines)) (m (match first "^#%|%s*@(%S+)%s+(%S+)%s+(%((%S+).*)")) a) (unless m (error (str "Bad doc in env: " func))) (push! records (cons first rest)))
+Traceback:
+stack traceback:
+	[C]: in function 'error'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:117: in function 'lal.lang.compiler.err'
+	...g\hg\qluart\lalrt\lalrtlib/lua/lal/lang/syntax_forms.lua:753: in function 'lal/lang/syntax_forms.let'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:526: in function 'lal.lang.compiler.compile'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:431: in function 'lal.lang.compiler.compile_block'
+	...g\hg\qluart\lalrt\lalrtlib/lua/lal/lang/syntax_forms.lua:735: in function 'lal/lang/syntax_forms.do-each'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:526: in function 'lal.lang.compiler.compile'
+	...g\hg\qluart\lalrt\lalrtlib/lua/lal/lang/syntax_forms.lua:558: in function 'lal/lang/syntax_forms.if'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:526: in function 'lal.lang.compiler.compile'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:431: in function 'lal.lang.compiler.compile_block'
+	...
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:526: in function 'lal.lang.compiler.compile'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:431: in function 'lal.lang.compiler.compile_block'
+	(...tail calls...)
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:526: in function 'lal.lang.compiler.compile'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:403: in function <...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:399>
+	[C]: in function 'xpcall'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:399: in function 'lal.lang.compiler.compile_toplevel'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:571: in function 'lal.lang.compiler.compile_lal_code'
+	C:\Entwicklung\hg\qluart\lalrt\lalrtlib/lua/lal\lal.lua:31: in function 'lal.lal.eval'
+	(...tail calls...)
+	[string "prelude(pid 0)"]:10: in function <[string "prelude(pid 0)"]:9>
+	[C]: in function 'xpcall'
+	[string "prelude(pid 0)"]:15: in function <[string "prelude(pid 0)"]:7>
+	(...tail calls...)
+stack traceback:
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:420: in function 'lal.lang.compiler.compile_toplevel'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:571: in function 'lal.lang.compiler.compile_lal_code'
+	C:\Entwicklung\hg\qluart\lalrt\lalrtlib/lua/lal\lal.lua:31: in function 'lal.lal.eval'
+	(...tail calls...)
+	[string "prelude(pid 0)"]:10: in function <[string "prelude(pid 0)"]:9>
+	[C]: in function 'xpcall'
+	[string "prelude(pid 0)"]:15: in function <[string "prelude(pid 0)"]:7>
+	(...tail calls...)
+
+20161215 06:01:37.606849   error:0x000022b0|main@main.cpp:54   | *EXCEPTION* 0> Error while evaluating lua code [prelude(pid 0)]: [string "prelude(pid 0)"]:16: [makedoc.lal:106] Compiler Error: Bad let binding spec, element 5 is not a list., in Form: (let ((lines (split-lines doc-string)) (first (@ 0 lines)) (rest (list-util-drop 1 lines)) (m (match first "^#%|%s*@(%S+)%s+(%S+)%s+(%((%S+).*)")) a) (unless m (error (str "Bad doc in env: " func))) (push! records (cons first rest)))
+Traceback:
+stack traceback:
+	[C]: in function 'error'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:117: in function 'lal.lang.compiler.err'
+	...g\hg\qluart\lalrt\lalrtlib/lua/lal/lang/syntax_forms.lua:753: in function 'lal/lang/syntax_forms.let'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:526: in function 'lal.lang.compiler.compile'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:431: in function 'lal.lang.compiler.compile_block'
+	...g\hg\qluart\lalrt\lalrtlib/lua/lal/lang/syntax_forms.lua:735: in function 'lal/lang/syntax_forms.do-each'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:526: in function 'lal.lang.compiler.compile'
+	...g\hg\qluart\lalrt\lalrtlib/lua/lal/lang/syntax_forms.lua:558: in function 'lal/lang/syntax_forms.if'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:526: in function 'lal.lang.compiler.compile'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:431: in function 'lal.lang.compiler.compile_block'
+	...
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:526: in function 'lal.lang.compiler.compile'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:431: in function 'lal.lang.compiler.compile_block'
+	(...tail calls...)
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:526: in function 'lal.lang.compiler.compile'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:403: in function <...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:399>
+	[C]: in function 'xpcall'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:399: in function 'lal.lang.compiler.compile_toplevel'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:571: in function 'lal.lang.compiler.compile_lal_code'
+	C:\Entwicklung\hg\qluart\lalrt\lalrtlib/lua/lal\lal.lua:31: in function 'lal.lal.eval'
+	(...tail calls...)
+	[string "prelude(pid 0)"]:10: in function <[string "prelude(pid 0)"]:9>
+	[C]: in function 'xpcall'
+	[string "prelude(pid 0)"]:15: in function <[string "prelude(pid 0)"]:7>
+	(...tail calls...)
+stack traceback:
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:420: in function 'lal.lang.compiler.compile_toplevel'
+	...klung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\compiler.lua:571: in function 'lal.lang.compiler.compile_lal_code'
+	C:\Entwicklung\hg\qluart\lalrt\lalrtlib/lua/lal\lal.lua:31: in function 'lal.lal.eval'
+	(...tail calls...)
+	[string "prelude(pid 0)"]:10: in function <[string "prelude(pid 0)"]:9>
+	[C]: in function 'xpcall'
+	[string "prelude(pid 0)"]:15: in function <[string "prelude(pid 0)"]:7>
+	(...tail calls...)
+
+20161215 06:01:37.606849   trace:0x0000391c|lal_rt::start_process@process.cpp:65     | *PROCESS END* 0
+20161215 06:01:54.553087   trace:0x000023b8|lal_rt::start_process@process.cpp:42   | *PROCESS START* 0
+20161215 06:01:55.301364   error:0x000023b8|lal_rt::start_process@process.cpp:51     | *PROCESS EXCEPTION* (0): Error while evaluating lua code [prelude(pid 0)]: [string "prelude(pid 0)"]:16: LAL-Lua Runtime Error: "[string \"*LAL*:makedoc.lal:...\"]:82: table index is nil"
+LAL stack traceback:
+       *LAL: makedoc.lal:34 [sectionalize]
+       *LAL: makedoc.lal:59 [write_records]
+       *LAL: makedoc.lal:122 [nil]
+        Lua: =[C]:-1 [xpcall]
+        Lua: @C:\Entwicklung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\util.lua:226 [nil]
+        Lua: prelude(pid 0):10 [nil]
+        Lua: =[C]:-1 [xpcall]
+        Lua: prelude(pid 0):15 [nil]
+Lua stack traceback:
+	[string "*LAL*:makedoc.lal:..."]:82: in upvalue 'sectionalize'
+	[string "*LAL*:makedoc.lal:..."]:139: in local 'write_records'
+	[string "*LAL*:makedoc.lal:..."]:340: in main chunk
+	[C]: in function 'xpcall'
+	...twicklung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\util.lua:226: in function 'lal.lang.util.exec_lua_code_func'
+	(...tail calls...)
+	[string "prelude(pid 0)"]:10: in function <[string "prelude(pid 0)"]:9>
+	[C]: in function 'xpcall'
+	[string "prelude(pid 0)"]:15: in function <[string "prelude(pid 0)"]:7>
+	(...tail calls...)
+stack traceback:
+	...twicklung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\util.lua:229: in function 'lal.lang.util.exec_lua_code_func'
+	(...tail calls...)
+	[string "prelude(pid 0)"]:10: in function <[string "prelude(pid 0)"]:9>
+	[C]: in function 'xpcall'
+	[string "prelude(pid 0)"]:15: in function <[string "prelude(pid 0)"]:7>
+	(...tail calls...)
+
+20161215 06:01:55.418311   error:0x00000774|main@main.cpp:54   | *EXCEPTION* 0> Error while evaluating lua code [prelude(pid 0)]: [string "prelude(pid 0)"]:16: LAL-Lua Runtime Error: "[string \"*LAL*:makedoc.lal:...\"]:82: table index is nil"
+LAL stack traceback:
+       *LAL: makedoc.lal:34 [sectionalize]
+       *LAL: makedoc.lal:59 [write_records]
+       *LAL: makedoc.lal:122 [nil]
+        Lua: =[C]:-1 [xpcall]
+        Lua: @C:\Entwicklung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\util.lua:226 [nil]
+        Lua: prelude(pid 0):10 [nil]
+        Lua: =[C]:-1 [xpcall]
+        Lua: prelude(pid 0):15 [nil]
+Lua stack traceback:
+	[string "*LAL*:makedoc.lal:..."]:82: in upvalue 'sectionalize'
+	[string "*LAL*:makedoc.lal:..."]:139: in local 'write_records'
+	[string "*LAL*:makedoc.lal:..."]:340: in main chunk
+	[C]: in function 'xpcall'
+	...twicklung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\util.lua:226: in function 'lal.lang.util.exec_lua_code_func'
+	(...tail calls...)
+	[string "prelude(pid 0)"]:10: in function <[string "prelude(pid 0)"]:9>
+	[C]: in function 'xpcall'
+	[string "prelude(pid 0)"]:15: in function <[string "prelude(pid 0)"]:7>
+	(...tail calls...)
+stack traceback:
+	...twicklung\hg\qluart\lalrt\lalrtlib/lua/lal\lang\util.lua:229: in function 'lal.lang.util.exec_lua_code_func'
+	(...tail calls...)
+	[string "prelude(pid 0)"]:10: in function <[string "prelude(pid 0)"]:9>
+	[C]: in function 'xpcall'
+	[string "prelude(pid 0)"]:15: in function <[string "prelude(pid 0)"]:7>
+	(...tail calls...)
+
+20161215 06:01:55.418311   trace:0x000023b8|lal_rt::start_process@process.cpp:65     | *PROCESS END* 0
+20161215 06:02:24.635661   trace:0x00002664|lal_rt::start_process@process.cpp:42   | *PROCESS START* 0
+20161215 06:02:25.419284    info:0x00000d78|main@main.cpp:58   | *RETURN* 0> wrote lal_reference.mkd
+20161215 06:02:25.419284   trace:0x00002664|lal_rt::start_process@process.cpp:65     | *PROCESS END* 0
+20161215 06:02:41.091066   trace:0x00000b40|lal_rt::start_process@process.cpp:42   | *PROCESS START* 0
+20161215 06:02:41.841549    info:0x00002304|main@main.cpp:58   | *RETURN* 0> wrote lal_reference.mkd
+20161215 06:02:41.841549   trace:0x00000b40|lal_rt::start_process@process.cpp:65     | *PROCESS END* 0
